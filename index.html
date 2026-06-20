@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackPad Writer — DIY Digital Writing for ₹239</title>
+    <meta name="description" content="Write digitally on your laptop trackpad using a ₹239 capacitive stylus + AutoHotKey. No drawing tablet needed.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:      #080B14;
+            --bg2:     #0D1525;
+            --surface: rgba(255,255,255,0.04);
+            --surface-hover: rgba(255,255,255,0.07);
+            --border:  rgba(255,255,255,0.08);
+            --border-bright: rgba(255,255,255,0.15);
+            --cyan:    #22D3EE;
+            --purple:  #818CF8;
+            --green:   #34D399;
+            --red:     #F87171;
+            --amber:   #FBBF24;
+            --text:    #F1F5F9;
+            --text2:   #94A3B8;
+            --text3:   #475569;
+            --radius:  16px;
+            --radius-sm: 10px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+        /* ── GLASS ── */
+        .glass {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: var(--radius);
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .glass:hover {
+            border-color: var(--border-bright);
+            background: var(--surface-hover);
+        }
+
+        /* ── GRADIENT TEXT ── */
+        .grad {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.22s;
+            border: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-ghost {
+            background: transparent;
+            color: var(--text2);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover {
+            background: var(--surface);
+            color: var(--text);
+            border-color: var(--border-bright);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #06090f;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+        .btn-primary:hover {
+            opacity: 0.88;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(34,211,238,0.28);
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 200;
+            padding: 14px 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(8,11,20,0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 17px;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .logo-pill {
+            width: 30px; height: 30px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+        .nav-links { display: flex; gap: 8px; align-items: center; }
+
+        /* ── SECTION WRAPPER ── */
+        .section-inner {
+            max-width: 1060px;
+            margin: 0 auto;
+            padding: 100px 40px;
+        }
+        .eyebrow {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--cyan);
+            margin-bottom: 14px;
+        }
+        .sec-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(28px, 4vw, 44px);
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 16px;
+        }
+        .sec-desc {
+            font-size: 16px;
+            color: var(--text2);
+            max-width: 600px;
+            margin-bottom: 48px;
+            line-height: 1.8;
+        }
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+            max-width: 1060px;
+            margin: 0 auto;
+        }
+
+        /* ── HERO ── */
+        .hero-wrap {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(110px);
+            pointer-events: none;
+            will-change: transform;
+        }
+        .o1 { width:560px;height:560px; background:radial-gradient(circle,rgba(34,211,238,0.14) 0%,transparent 70%); top:-120px;left:-180px; animation:d1 14s ease-in-out infinite; }
+        .o2 { width:640px;height:640px; background:radial-gradient(circle,rgba(129,140,248,0.11) 0%,transparent 70%); bottom:-220px;right:-220px; animation:d2 18s ease-in-out infinite; }
+        .o3 { width:320px;height:320px; background:radial-gradient(circle,rgba(52,211,153,0.07) 0%,transparent 70%); top:45%;right:22%; animation:d3 11s ease-in-out infinite; }
+        @keyframes d1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(55px,35px)} }
+        @keyframes d2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-45px,-28px)} }
+        @keyframes d3 { 0%,100%{transform:translate(0,-50%)} 50%{transform:translate(28px,calc(-50% + 18px))} }
+
+        .hero-inner {
+            position: relative;
+            z-index: 1;
+            padding: 128px 44px 88px;
+            max-width: 1060px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(34,211,238,0.08);
+            border: 1px solid rgba(34,211,238,0.18);
+            color: var(--cyan);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 15px;
+            border-radius: 100px;
+            margin-bottom: 30px;
+        }
+        .badge-dot {
+            width: 7px; height: 7px;
+            background: var(--cyan);
+            border-radius: 50%;
+            animation: blink 2.2s ease-in-out infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.75)} }
+
+        .hero-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(38px, 6.5vw, 76px);
+            font-weight: 700;
+            line-height: 1.08;
+            margin-bottom: 26px;
+        }
+        .hero-sub {
+            font-size: 17px;
+            color: var(--text2);
+            max-width: 560px;
+            margin-bottom: 40px;
+            line-height: 1.85;
+        }
+        .hero-ctas { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:60px; }
+
+        .stats-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            padding: 22px 28px;
+            border-radius: var(--radius);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            backdrop-filter: blur(20px);
+            min-width: 140px;
+        }
+        .stat-val {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 34px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+        .stat-lbl { font-size: 12px; color: var(--text2); }
+
+        /* ── PROBLEM ── */
+        .two-col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+
+        .p-card {
+            padding: 28px;
+            border-radius: var(--radius);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        .p-card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.35); }
+        .p-card.want { border-color: rgba(34,211,238,0.14); background: rgba(34,211,238,0.035); }
+        .p-card.bad  { border-color: rgba(248,113,113,0.12); background: rgba(248,113,113,0.03); }
+        .p-card.own  { border-color: rgba(129,140,248,0.14); background: rgba(129,140,248,0.03); }
+        .p-card.mind { border-color: rgba(52,211,153,0.14); background: rgba(52,211,153,0.03); }
+        .p-icon { font-size: 34px; margin-bottom: 16px; }
+        .p-title { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; margin-bottom:10px; }
+        .p-desc  { font-size:14px; color:var(--text2); line-height:1.75; }
+
+        /* ── TIMELINE ── */
+        .timeline { position:relative; display:flex; flex-direction:column; }
+        .timeline::before {
+            content:'';
+            position:absolute;
+            left:29px; top:0; bottom:0; width:2px;
+            background:linear-gradient(to bottom, var(--red), var(--amber) 50%, var(--green));
+            opacity:0.25;
+        }
+        .t-item { display:flex; gap:22px; padding-bottom:28px; position:relative; }
+        .t-dot {
+            flex-shrink:0;
+            width:60px; height:60px;
+            border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:22px;
+            position:relative; z-index:1;
+            transition:transform 0.3s;
+        }
+        .t-item:hover .t-dot { transform:scale(1.1); }
+        .d-fail    { background:rgba(248,113,113,0.09); border:2px solid rgba(248,113,113,0.28); }
+        .d-partial { background:rgba(251,191,36,0.09); border:2px solid rgba(251,191,36,0.28); }
+        .d-win     { background:rgba(52,211,153,0.1);  border:2px solid rgba(52,211,153,0.38); box-shadow:0 0 24px rgba(52,211,153,0.12); }
+
+        .t-card {
+            flex:1;
+            padding:22px 26px;
+            border-radius:var(--radius);
+            background:var(--surface);
+            border-left:3px solid transparent;
+            transition:all 0.3s;
+            margin-bottom:8px;
+        }
+        .t-card:hover { background:var(--surface-hover); transform:translateX(5px); }
+        .t-card.fail    { border-left-color:rgba(248,113,113,0.45); }
+        .t-card.partial { border-left-color:rgba(251,191,36,0.45); }
+        .t-card.win     { border-left-color:rgba(52,211,153,0.55); }
+
+        .t-iter { font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text3); margin-bottom:5px; }
+        .t-name { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; margin-bottom:8px; }
+        .t-desc { font-size:14px; color:var(--text2); margin-bottom:12px; line-height:1.7; }
+        .t-tag  { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; padding:4px 12px; border-radius:100px; }
+        .tag-f { background:rgba(248,113,113,0.1); color:var(--red); }
+        .tag-p { background:rgba(251,191,36,0.1); color:var(--amber); }
+        .tag-w { background:rgba(52,211,153,0.1); color:var(--green); }
+
+        /* ── SOLUTION ── */
+        .sol-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:24px; }
+        .sol-card {
+            padding:32px;
+            border-radius:var(--radius);
+            background:var(--surface);
+            border:1px solid var(--border);
+            position:relative;
+            overflow:hidden;
+            transition:all 0.3s;
+        }
+        .sol-card::after {
+            content:'';
+            position:absolute;
+            top:0; left:0; right:0; height:2px;
+        }
+        .sol-card.sw::after { background:linear-gradient(90deg,var(--purple),transparent); }
+        .sol-card.hw::after { background:linear-gradient(90deg,var(--cyan),transparent); }
+        .sol-card:hover { transform:translateY(-4px); box-shadow:0 20px 50px rgba(0,0,0,0.4); border-color:var(--border-bright); }
+
+        .sol-icon { font-size:44px; margin-bottom:20px; }
+        .sol-name { font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; margin-bottom:8px; }
+        .sol-price { display:inline-block; font-size:12px; padding:3px 10px; border-radius:6px; margin-bottom:16px; font-weight:600; }
+        .sp-free { background:rgba(52,211,153,0.1); color:var(--green); }
+        .sp-paid { background:rgba(34,211,238,0.1); color:var(--cyan); }
+        .sol-desc { font-size:14px; color:var(--text2); margin-bottom:20px; line-height:1.75; }
+        .sol-list { list-style:none; display:flex; flex-direction:column; gap:9px; }
+        .sol-list li { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text2); }
+        .sol-list li::before { content:'→'; color:var(--cyan); font-size:11px; flex-shrink:0; }
+
+        /* ── MATERIALS ── */
+        .mat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+        .mat-card {
+            padding:26px 22px;
+            border-radius:var(--radius);
+            background:var(--surface);
+            border:1px solid var(--border);
+            text-align:center;
+            transition:all 0.3s;
+        }
+        .mat-card:hover { border-color:rgba(34,211,238,0.25); transform:translateY(-3px); background:rgba(34,211,238,0.025); }
+        .mat-icon { font-size:38px; margin-bottom:14px; }
+        .mat-name { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; margin-bottom:7px; }
+        .mat-info { font-size:13px; color:var(--text2); margin-bottom:10px; line-height:1.65; }
+        .mat-cost { font-size:15px; font-weight:700; color:var(--green); }
+
+        /* ── CODE BLOCK ── */
+        .code-wrap { border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); margin:32px 0; }
+        .code-bar {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:12px 20px;
+            background:rgba(255,255,255,0.03);
+            border-bottom:1px solid var(--border);
+        }
+        .traffic { display:flex; gap:6px; }
+        .traffic span { width:11px;height:11px;border-radius:50%; }
+        .tr { background:#FF5F57; }
+        .ty { background:#FFBD2E; }
+        .tg { background:#28CA41; }
+        .filename { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text2); }
+        .copy-btn {
+            background:rgba(255,255,255,0.06);
+            border:1px solid var(--border);
+            color:var(--text2);
+            padding:4px 13px;
+            border-radius:7px;
+            font-size:12px;
+            cursor:pointer;
+            transition:all 0.2s;
+            font-family:'Inter',sans-serif;
+        }
+        .copy-btn:hover { background:rgba(255,255,255,0.1); color:var(--text); }
+        .copy-btn.copied { color:var(--green); border-color:rgba(52,211,153,0.3); }
+
+        pre {
+            background:#070A12;
+            padding:28px;
+            overflow-x:auto;
+            font-family:'JetBrains Mono',monospace;
+            font-size:13px;
+            line-height:1.85;
+            color:#9CA3AF;
+        }
+        .cm { color:#374151; }
+        .kw { color:#818CF8; }
+        .fn { color:#22D3EE; }
+        .vr { color:#FCD34D; }
+        .st { color:#34D399; }
+        .cd { color:#FBBF24; }
+
+        /* ── STEPS ── */
+        .steps { display:flex; flex-direction:column; gap:14px; }
+        .step {
+            display:flex; gap:18px; align-items:flex-start;
+            padding:22px 24px;
+            border-radius:var(--radius);
+            background:var(--surface);
+            border:1px solid var(--border);
+            transition:all 0.3s;
+        }
+        .step:hover { border-color:rgba(34,211,238,0.2); background:var(--surface-hover); }
+        .s-num {
+            flex-shrink:0;
+            width:37px;height:37px;
+            border-radius:10px;
+            background:linear-gradient(135deg,rgba(34,211,238,0.18),rgba(129,140,248,0.18));
+            border:1px solid rgba(34,211,238,0.18);
+            display:flex;align-items:center;justify-content:center;
+            font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;
+            color:var(--cyan);
+        }
+        .s-title { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; margin-bottom:5px; }
+        .s-desc { font-size:14px; color:var(--text2); line-height:1.7; }
+        .s-desc a { color:var(--cyan); text-decoration:none; }
+        .s-desc a:hover { text-decoration:underline; }
+        .s-desc code {
+            background:rgba(255,255,255,0.06);
+            padding:2px 7px;
+            border-radius:5px;
+            font-family:'JetBrains Mono',monospace;
+            font-size:12px;
+        }
+
+        /* ── HOW TO USE ── */
+        .use-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+        .use-card {
+            padding:24px 18px;
+            border-radius:var(--radius);
+            background:var(--surface);
+            border:1px solid var(--border);
+            text-align:center;
+            transition:all 0.3s;
+        }
+        .use-card:hover { border-color:rgba(129,140,248,0.3); transform:translateY(-4px); box-shadow:0 16px 40px rgba(0,0,0,0.3); }
+        .use-n {
+            font-family:'Space Grotesk',sans-serif;font-size:38px;font-weight:700;
+            background:linear-gradient(135deg,var(--cyan),var(--purple));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+            margin-bottom:8px;
+        }
+        .use-t { font-weight:600; margin-bottom:6px; font-size:14px; }
+        .use-d { font-size:13px; color:var(--text2); line-height:1.65; }
+
+        /* ── APPS ── */
+        .apps-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+        .app-card {
+            padding:18px;
+            border-radius:var(--radius-sm);
+            background:var(--surface);
+            border:1px solid var(--border);
+            display:flex;align-items:center;gap:12px;
+            transition:all 0.22s;
+        }
+        .app-card:hover { border-color:var(--border-bright); background:var(--surface-hover); transform:translateY(-2px); }
+        .a-icon { font-size:24px; flex-shrink:0; }
+        .a-name { font-size:13px; font-weight:500; }
+        .a-note { font-size:11px; color:var(--text3); margin-top:2px; }
+
+        /* ── COMPARE ── */
+        .cmp-table { width:100%; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); }
+        .cmp-table th {
+            padding:14px 18px;
+            background:rgba(255,255,255,0.03);
+            text-align:left;
+            font-family:'Space Grotesk',sans-serif;
+            font-size:12px; font-weight:600; color:var(--text2);
+            letter-spacing:0.05em; text-transform:uppercase;
+            border-bottom:1px solid var(--border);
+        }
+        .cmp-table td { padding:15px 18px; border-top:1px solid var(--border); font-size:13px; color:var(--text2); vertical-align:middle; }
+        .cmp-table tr.hl td { background:rgba(34,211,238,0.03); border-top-color:rgba(34,211,238,0.1); }
+        .cmp-table tr.hl td:first-child { color:var(--cyan); font-weight:600; }
+        .price-big { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; }
+        .pg { color:var(--green); }
+        .pr { color:var(--red); }
+        .chk { color:var(--green); }
+        .xmk { color:var(--red); }
+        .pmk { color:var(--amber); }
+        .badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:5px; font-weight:600; margin-left:6px; }
+        .bg { background:rgba(52,211,153,0.1); color:var(--green); }
+        .br { background:rgba(248,113,113,0.1); color:var(--red); }
+
+        /* ── INFO BOX ── */
+        .info-box {
+            padding:20px 26px;
+            border-radius:var(--radius);
+            background:var(--surface);
+            border:1px solid var(--border);
+        }
+        .info-box.warn { border-color:rgba(251,191,36,0.2); background:rgba(251,191,36,0.03); }
+
+        /* ── FOOTER ── */
+        footer {
+            border-top:1px solid var(--border);
+            padding:44px 40px;
+            text-align:center;
+            color:var(--text3);
+            font-size:13px;
+        }
+        footer a { color:var(--cyan); text-decoration:none; }
+        footer a:hover { text-decoration:underline; }
+        .foot-logo { font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--text); margin-bottom:8px; }
+        .foot-links { display:flex; gap:24px; justify-content:center; margin:16px 0 24px; flex-wrap:wrap; }
+
+        /* ── FADE IN ── */
+        .fi { opacity:0; transform:translateY(22px); transition:opacity 0.65s ease,transform 0.65s ease; }
+        .fi.vis { opacity:1; transform:translateY(0); }
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:780px){
+            nav { padding:12px 20px; }
+            .hero-inner { padding:100px 20px 60px; }
+            .section-inner { padding:80px 20px; }
+            .two-col, .sol-grid { grid-template-columns:1fr; }
+            .mat-grid { grid-template-columns:1fr 1fr; }
+            .use-grid { grid-template-columns:1fr 1fr; }
+            .apps-grid { grid-template-columns:1fr 1fr; }
+            .stats-row { flex-direction:column; max-width:280px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <a href="#" class="nav-logo">
+        <div class="logo-pill">✏️</div>
+        TrackPad Writer
+    </a>
+    <div class="nav-links">
+        <a href="#journey" class="btn btn-ghost">Journey</a>
+        <a href="#setup" class="btn btn-ghost">Setup</a>
+        <a href="https://github.com" target="_blank" class="btn btn-primary">⭐ Star on GitHub</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero-wrap">
+    <div class="orb o1"></div>
+    <div class="orb o2"></div>
+    <div class="orb o3"></div>
+    <div class="hero-inner">
+        <div class="hero-badge">
+            <div class="badge-dot"></div>
+            Engineering on a Student Budget
+        </div>
+        <h1 class="hero-title">
+            Write Digitally on Your<br>
+            Laptop &mdash; for <span class="grad">₹239</span>
+        </h1>
+        <p class="hero-sub">
+            No drawing tablet. No expensive hardware. Just a capacitive stylus, AutoHotKey, and your existing trackpad. Built by an engineering student who refused to pay ₹3,000 for something he could engineer himself.
+        </p>
+        <div class="hero-ctas">
+            <a href="#setup" class="btn btn-primary">→ Setup Guide</a>
+            <a href="#journey" class="btn btn-ghost">Read the Journey</a>
+        </div>
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-val" style="color:var(--green);">₹239</div>
+                <div class="stat-lbl">Total cost of solution</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" style="color:var(--red);">₹3,199</div>
+                <div class="stat-lbl">Cheapest Wacom alternative</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" style="color:var(--cyan);">5×</div>
+                <div class="stat-lbl">Iterations before this</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- PROBLEM -->
+<div class="section-inner fi" id="problem">
+    <div class="eyebrow">The Problem</div>
+    <h2 class="sec-title">I wanted to write digitally.<br>Tablets were too expensive.</h2>
+    <p class="sec-desc">As a student, I always wanted to write notes, diagrams, and sketches digitally. But every solution came with a serious price tag or serious compromises.</p>
+    <div class="two-col">
+        <div class="p-card want">
+            <div class="p-icon">✍️</div>
+            <div class="p-title">What I Wanted</div>
+            <div class="p-desc">Write naturally with a pen on a digital surface — notes, mind maps, rough sketches, annotations. Fast, intuitive, precise. Just like a physical writing pad.</div>
+        </div>
+        <div class="p-card bad">
+            <div class="p-icon">💸</div>
+            <div class="p-title">What It Would Cost</div>
+            <div class="p-desc">Cheapest drawing pad: ₹1,779 (average reviews, needs drivers). Wacom One: ₹3,199. Hard to justify as a student for something I'd use occasionally.</div>
+        </div>
+        <div class="p-card own">
+            <div class="p-icon">💻</div>
+            <div class="p-title">What I Already Had</div>
+            <div class="p-desc">A Windows laptop with a large touch-sensitive trackpad. I had a drawing surface — it was already there. I just needed the right software layer to unlock it.</div>
+        </div>
+        <div class="p-card mind">
+            <div class="p-icon">🧠</div>
+            <div class="p-title">The Engineering Instinct</div>
+            <div class="p-desc">Why buy hardware to solve a software problem? The trackpad detects touch. Drawing apps read mouse input. I just needed a clever way to bridge the two — software first.</div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- JOURNEY -->
+<div class="section-inner fi" id="journey">
+    <div class="eyebrow">The Journey</div>
+    <h2 class="sec-title">5 Iterations Before the<br><span class="grad">Perfect Solution</span></h2>
+    <p class="sec-desc">I didn't get it right the first time. Here's every attempt — what I tried, why it failed, and what the failure taught me.</p>
+
+    <div class="timeline">
+        <div class="t-item">
+            <div class="t-dot d-fail">🖱️</div>
+            <div class="t-card fail">
+                <div class="t-iter">Iteration 01</div>
+                <div class="t-name">Mouse Drag — The Obvious First Try</div>
+                <div class="t-desc">Opened Microsoft Whiteboard, selected the pen tool, and tried writing with left-click + drag. Simple, zero setup.</div>
+                <span class="t-tag tag-f">❌ Completely uncontrollable — handwriting was terrible</span>
+            </div>
+        </div>
+
+        <div class="t-item">
+            <div class="t-dot d-fail">👆</div>
+            <div class="t-card fail">
+                <div class="t-iter">Iteration 02</div>
+                <div class="t-name">Fingers on the Trackpad</div>
+                <div class="t-desc">The trackpad supports touch. So I tried writing with my fingers directly on the surface. Except: you have to double-tap to start a stroke, then immediately write. The coordination made it genuinely impractical.</div>
+                <span class="t-tag tag-f">❌ Double-tap timing made continuous writing impossible</span>
+            </div>
+        </div>
+
+        <div class="t-item">
+            <div class="t-dot d-partial">🤝</div>
+            <div class="t-card partial">
+                <div class="t-iter">Iteration 03</div>
+                <div class="t-name">Two-Hand Split: Mouse + Trackpad</div>
+                <div class="t-desc">Left hand holds the left-click on the mouse. Right hand writes on the trackpad. This actually worked! The mouse held the "drawing" state while the trackpad moved freely. But it required having a mouse — not always available.</div>
+                <span class="t-tag tag-p">⚠️ Worked — but required a mouse at all times</span>
+            </div>
+        </div>
+
+        <div class="t-item">
+            <div class="t-dot d-partial">⌨️</div>
+            <div class="t-card partial">
+                <div class="t-iter">Iteration 04</div>
+                <div class="t-name">AutoHotKey — Automate the Click</div>
+                <div class="t-desc">The insight: why hold a click manually when software can do it? I wrote an AutoHotKey script that maps CapsLock to toggle the left mouse button. Press once → LButton held DOWN (drawing starts). Press again → LButton UP (drawing stops). Mouse-free, keyboard-free writing.</div>
+                <span class="t-tag tag-p">⚠️ Works great — but fingers still lack precision on glass</span>
+            </div>
+        </div>
+
+        <div class="t-item">
+            <div class="t-dot d-win">✏️</div>
+            <div class="t-card win">
+                <div class="t-iter">Iteration 05 — ✅ Final Solution</div>
+                <div class="t-name">Capacitive Stylus Pen — The Missing Piece</div>
+                <div class="t-desc">A capacitive stylus mimics the electrical properties of a human finger on any touch surface. No Bluetooth, no charging, no pairing — just a fine-tipped pen the trackpad reads like a fingertip, with far more control. Combined with the AHK script, I can write exactly like I would on a physical notepad. Total cost: ₹239 on Amazon.</div>
+                <span class="t-tag tag-w">✅ Natural writing, no mouse, no tablet — exactly what I wanted</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SOLUTION -->
+<div class="section-inner fi" id="solution">
+    <div class="eyebrow">The Solution</div>
+    <h2 class="sec-title">Two Components.<br>One Elegant Hack.</h2>
+    <p class="sec-desc">The solution pairs a free automation script with a ₹239 pen. Together they turn your existing laptop trackpad into a fully functional writing surface.</p>
+
+    <div class="sol-grid">
+        <div class="sol-card sw">
+            <div class="sol-icon">⚡</div>
+            <div class="sol-name">AutoHotKey Script</div>
+            <span class="sol-price sp-free">Free — Open Source</span>
+            <p class="sol-desc">A lightweight Windows automation tool. Our script remaps CapsLock as a toggle for holding the left mouse button — enabling continuous ink strokes without physically clicking anything.</p>
+            <ul class="sol-list">
+                <li>Runs silently in system tray — zero overhead</li>
+                <li>CapsLock once to start drawing, once to stop</li>
+                <li>Escape key as an instant emergency release</li>
+                <li>A tooltip shows current state (ON / OFF)</li>
+            </ul>
+        </div>
+        <div class="sol-card hw">
+            <div class="sol-icon">🖊️</div>
+            <div class="sol-name">Capacitive Stylus Pen</div>
+            <span class="sol-price sp-paid">₹200 – ₹250 on Amazon</span>
+            <p class="sol-desc">Works by replicating the electrical capacitance of a human finger. No battery, no Bluetooth, no drivers. Any capacitive trackpad or touchscreen reads it instantly and forever — like a digital pencil that never runs out.</p>
+            <ul class="sol-list">
+                <li>Works on any touch-sensitive trackpad</li>
+                <li>Never needs charging — passive technology</li>
+                <li>Fine disc tip gives better precision than a fingertip</li>
+                <li>Also works on phones, iPads, and tablets</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="info-box glass" style="display:flex;align-items:center;gap:20px;">
+        <div style="font-size:34px;flex-shrink:0;">💡</div>
+        <div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;margin-bottom:6px;">Why the two work together</div>
+            <div style="font-size:14px;color:var(--text2);line-height:1.75;">Drawing apps need a <em>held mouse click + movement</em> to draw a stroke. The <strong style="color:var(--purple)">AHK script holds the click</strong>. The <strong style="color:var(--cyan)">stylus provides precise movement</strong>. The trackpad reads the stylus as a finger. The app sees: held click + tracked movement = <strong style="color:var(--green)">ink stroke.</strong></div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- MATERIALS -->
+<div class="section-inner fi" id="materials">
+    <div class="eyebrow">What You Need</div>
+    <h2 class="sec-title">3 Things. That's It.</h2>
+    <p class="sec-desc">No special hardware, no drivers, no subscriptions. Here's everything required to replicate this setup from scratch.</p>
+    <div class="mat-grid">
+        <div class="mat-card">
+            <div class="mat-icon">💻</div>
+            <div class="mat-name">Windows Laptop</div>
+            <div class="mat-info">With a touch-sensitive trackpad. Most laptops made after 2016 qualify — check if your trackpad responds to finger touch.</div>
+            <div class="mat-cost">Already own it</div>
+        </div>
+        <div class="mat-card">
+            <div class="mat-icon">⚡</div>
+            <div class="mat-name">AutoHotKey v1.1</div>
+            <div class="mat-info">Free, open-source Windows automation tool. Download from autohotkey.com. Takes 2 minutes to install.</div>
+            <div class="mat-cost">Free</div>
+        </div>
+        <div class="mat-card">
+            <div class="mat-icon">🖊️</div>
+            <div class="mat-name">Capacitive Stylus</div>
+            <div class="mat-info">Any disc-tip capacitive stylus works. The Tukzer Universal (shown above) is the #1 Best Seller in Stylus Tips on Amazon India.</div>
+            <div class="mat-cost">~₹239</div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SETUP -->
+<div class="section-inner fi" id="setup">
+    <div class="eyebrow">Setup Guide</div>
+    <h2 class="sec-title">AutoHotKey Setup —<br>Done in 5 Minutes.</h2>
+    <p class="sec-desc">Follow these steps once. After that, the script runs automatically in the background every time you need it.</p>
+
+    <div class="steps">
+        <div class="step">
+            <div class="s-num">1</div>
+            <div>
+                <div class="s-title">Download AutoHotKey v1.1</div>
+                <div class="s-desc">Visit <a href="https://www.autohotkey.com/download/1.1/" target="_blank">autohotkey.com/download/1.1/</a> and download the latest v1.1 installer. Run it with default settings. <strong>Use v1.1 specifically</strong> — the script below is written for v1.1 syntax, not v2.</div>
+            </div>
+        </div>
+        <div class="step">
+            <div class="s-num">2</div>
+            <div>
+                <div class="s-title">Create a New Script File</div>
+                <div class="s-desc">Right-click anywhere on your Desktop → <strong>New → AutoHotKey Script</strong>. Name it <code>trackpad-writer.ahk</code>. This creates a blank .ahk file ready to edit.</div>
+            </div>
+        </div>
+        <div class="step">
+            <div class="s-num">3</div>
+            <div>
+                <div class="s-title">Paste the Script</div>
+                <div class="s-desc">Right-click the .ahk file → <strong>Edit Script</strong>. Delete all existing placeholder text. Paste the full script from the code block below. Save the file with <code>Ctrl + S</code>.</div>
+            </div>
+        </div>
+        <div class="step">
+            <div class="s-num">4</div>
+            <div>
+                <div class="s-title">Run the Script</div>
+                <div class="s-desc">Double-click the <code>trackpad-writer.ahk</code> file. A <strong>green H icon</strong> appears in your system tray (bottom-right corner of taskbar). The script is now running. CapsLock will now toggle drawing mode.</div>
+            </div>
+        </div>
+        <div class="step">
+            <div class="s-num">5</div>
+            <div>
+                <div class="s-title">Optional: Auto-Run on Windows Startup</div>
+                <div class="s-desc">Press <code>Win + R</code> → type <code>shell:startup</code> → press Enter. A folder opens. Paste a <strong>shortcut</strong> to your .ahk file here. The script now loads automatically every time Windows starts.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="code-wrap">
+        <div class="code-bar">
+            <div class="traffic">
+                <span class="tr"></span>
+                <span class="ty"></span>
+                <span class="tg"></span>
+            </div>
+            <div class="filename">trackpad-writer.ahk</div>
+            <button class="copy-btn" onclick="copyAHK()">Copy</button>
+        </div>
+<pre id="ahk-raw"><span class="cm">; ============================================</span>
+<span class="cm">; TrackPad Writer — AutoHotKey Script</span>
+<span class="cm">; Turns CapsLock into a drawing-mode toggle</span>
+<span class="cm">; Compatible with AutoHotKey v1.1</span>
+<span class="cm">; ============================================</span>
+<span class="cm">;</span>
+<span class="cm">; HOW IT WORKS:</span>
+<span class="cm">;   Press CapsLock ONCE  → Holds left click   (Start drawing)</span>
+<span class="cm">;   Press CapsLock AGAIN → Releases left click (Stop drawing)</span>
+<span class="cm">;   Press Escape         → Emergency release at any time</span>
+<span class="cm">;</span>
+<span class="cm">; USAGE:</span>
+<span class="cm">;   1. Open any drawing app (Whiteboard, Paint, OneNote, Excalidraw)</span>
+<span class="cm">;   2. Select the pen/draw tool in the app</span>
+<span class="cm">;   3. Press CapsLock → Drawing Mode ON (tooltip appears)</span>
+<span class="cm">;   4. Write with your capacitive stylus on the trackpad</span>
+<span class="cm">;   5. Press CapsLock again → Drawing Mode OFF</span>
+<span class="cm">; ============================================</span>
+
+<span class="kw">#NoEnv</span>
+<span class="kw">#SingleInstance</span> Force
+<span class="fn">SendMode</span> Input
+<span class="fn">SetWorkingDir</span> <span class="vr">%A_ScriptDir%</span>
+
+<span class="cm">; State variable — tracks whether click is currently held</span>
+<span class="vr">clickHeld</span> := <span class="kw">false</span>
+
+<span class="fn">CapsLock</span>::
+    <span class="kw">if</span> (<span class="vr">clickHeld</span>) {
+        <span class="cm">; Release the held mouse button — stop drawing</span>
+        <span class="cd">Send</span> {<span class="st">LButton up</span>}
+        <span class="vr">clickHeld</span> := <span class="kw">false</span>
+        <span class="fn">ToolTip</span>, <span class="st">✋  Drawing Mode  OFF</span>,, , 1
+    } <span class="kw">else</span> {
+        <span class="cm">; Hold the mouse button down — start drawing</span>
+        <span class="cd">Send</span> {<span class="st">LButton down</span>}
+        <span class="vr">clickHeld</span> := <span class="kw">true</span>
+        <span class="fn">ToolTip</span>, <span class="st">✏️  Drawing Mode  ON</span>,, , 1
+    }
+    <span class="cm">; Auto-hide the tooltip after 1.5 seconds</span>
+    <span class="fn">SetTimer</span>, RemoveTooltip, -1500
+<span class="kw">return</span>
+
+<span class="fn">RemoveTooltip</span>:
+    <span class="fn">ToolTip</span>,,,,1
+<span class="kw">return</span>
+
+<span class="cm">; ---- Emergency release ----</span>
+<span class="cm">; Press Escape at any time to instantly stop drawing</span>
+<span class="fn">Escape</span>::
+    <span class="kw">if</span> (<span class="vr">clickHeld</span>) {
+        <span class="cd">Send</span> {<span class="st">LButton up</span>}
+        <span class="vr">clickHeld</span> := <span class="kw">false</span>
+        <span class="fn">ToolTip</span>, <span class="st">✋  Released</span>,, , 1
+        <span class="fn">SetTimer</span>, RemoveTooltip, -1000
+    }
+<span class="kw">return</span></pre>
+    </div>
+
+    <div class="info-box warn" style="font-size:13px;color:var(--amber);line-height:1.7;">
+        ⚠️ &nbsp;<strong>Important:</strong> This script uses <strong>AutoHotKey v1.1 syntax</strong>, which differs from v2. If you already have AHK v2 installed, download v1.1 from <a href="https://www.autohotkey.com/download/1.1/" target="_blank" style="color:var(--cyan)">autohotkey.com/download/1.1/</a> and use it to run this file.
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- HOW TO USE -->
+<div class="section-inner fi" id="how-to-use">
+    <div class="eyebrow">How to Use</div>
+    <h2 class="sec-title">The 4-Step Flow.</h2>
+    <p class="sec-desc">Once the script is running, open any drawing app and follow this process every time you want to write.</p>
+
+    <div class="use-grid">
+        <div class="use-card">
+            <div class="use-n">01</div>
+            <div class="use-t">Open a Drawing App</div>
+            <div class="use-d">Launch Whiteboard, Paint, OneNote, or any app. Select its Pen / Draw tool from the toolbar.</div>
+        </div>
+        <div class="use-card">
+            <div class="use-n">02</div>
+            <div class="use-t">Press CapsLock</div>
+            <div class="use-d">A tooltip shows "✏️ Drawing Mode ON". Left click is now held. The canvas is ready.</div>
+        </div>
+        <div class="use-card">
+            <div class="use-n">03</div>
+            <div class="use-t">Write with Stylus</div>
+            <div class="use-d">Move the capacitive stylus on your trackpad. Ink strokes appear in real time. Write naturally.</div>
+        </div>
+        <div class="use-card">
+            <div class="use-n">04</div>
+            <div class="use-t">Press CapsLock Again</div>
+            <div class="use-d">Tooltip shows "✋ Drawing Mode OFF". Click released. Lift the pen between letters to break strokes.</div>
+        </div>
+    </div>
+
+    <div class="info-box glass" style="margin-top:18px;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;margin-bottom:14px;">💡 Pro Tips</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;color:var(--text2);line-height:1.7;">
+            <div>→ Press <strong style="color:var(--text)">Escape</strong> anytime to instantly release the click if anything goes wrong.</div>
+            <div>→ Use <strong style="color:var(--text)">Ctrl + Z</strong> in your drawing app to undo any accidental strokes.</div>
+            <div>→ Rest your hand on the <strong style="color:var(--text)">laptop chassis</strong>, not the trackpad, to avoid palm-rejection issues.</div>
+            <div>→ In <strong style="color:var(--text)">Microsoft Whiteboard</strong>, select the Pen tool <em>before</em> pressing CapsLock.</div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- APPS -->
+<div class="section-inner fi" id="apps">
+    <div class="eyebrow">Compatible Apps</div>
+    <h2 class="sec-title">Works Anywhere<br>Click-and-Drag Drawing Works.</h2>
+    <p class="sec-desc">Any application that draws on left-click + drag is compatible. These are tested and recommended:</p>
+
+    <div class="apps-grid">
+        <div class="app-card"><div class="a-icon">🖼️</div><div><div class="a-name">Microsoft Whiteboard</div><div class="a-note">Best for diagrams & ideation</div></div></div>
+        <div class="app-card"><div class="a-icon">🎨</div><div><div class="a-name">MS Paint</div><div class="a-note">Built-in, zero setup needed</div></div></div>
+        <div class="app-card"><div class="a-icon">📓</div><div><div class="a-name">OneNote</div><div class="a-note">Great for handwritten notes</div></div></div>
+        <div class="app-card"><div class="a-icon">✏️</div><div><div class="a-name">Excalidraw</div><div class="a-note">Free, web-based, clean UI</div></div></div>
+        <div class="app-card"><div class="a-icon">🗒️</div><div><div class="a-name">Miro</div><div class="a-note">Collaborative whiteboard</div></div></div>
+        <div class="app-card"><div class="a-icon">📐</div><div><div class="a-name">FigJam</div><div class="a-note">Design & ideation flows</div></div></div>
+        <div class="app-card"><div class="a-icon">🖊️</div><div><div class="a-name">Paint 3D</div><div class="a-note">3D strokes & layers</div></div></div>
+        <div class="app-card"><div class="a-icon">📊</div><div><div class="a-name">Concepts App</div><div class="a-note">Infinite canvas, vector</div></div></div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- COST COMPARE -->
+<div class="section-inner fi" id="compare">
+    <div class="eyebrow">Cost Comparison</div>
+    <h2 class="sec-title">₹239 vs ₹3,199.</h2>
+    <p class="sec-desc">Here's how the DIY solution stacks up against the most common off-the-shelf drawing tablet alternatives available in India.</p>
+
+    <table class="cmp-table">
+        <thead>
+            <tr>
+                <th>Solution</th>
+                <th>Cost</th>
+                <th>Extra Hardware</th>
+                <th>Needs Charging</th>
+                <th>Works Instantly</th>
+                <th>Best For</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="hl">
+                <td>✏️ This Setup (DIY)</td>
+                <td><span class="price-big pg">₹239</span><span class="badge bg">93% cheaper</span></td>
+                <td><span class="chk">✓</span> Capacitive pen (no drivers)</td>
+                <td><span class="chk">✓ Never</span></td>
+                <td><span class="chk">✓ Yes</span></td>
+                <td>Students, note-takers</td>
+            </tr>
+            <tr>
+                <td>🖱️ Mouse only</td>
+                <td><span class="price-big">₹0</span></td>
+                <td><span class="chk">✓</span> Just a mouse</td>
+                <td>—</td>
+                <td><span class="chk">✓ Yes</span></td>
+                <td>Nobody — handwriting unusable</td>
+            </tr>
+            <tr>
+                <td>📋 XP-Pen Star G430S</td>
+                <td><span class="price-big pr">₹1,779</span></td>
+                <td><span class="xmk">✗</span> USB drawing tablet</td>
+                <td><span class="xmk">✗ Pen battery</span></td>
+                <td><span class="pmk">⚠ After drivers</span></td>
+                <td>Regular illustrators</td>
+            </tr>
+            <tr>
+                <td>🎨 Wacom One Small</td>
+                <td><span class="price-big pr">₹3,199</span></td>
+                <td><span class="xmk">✗</span> USB drawing tablet</td>
+                <td><span class="xmk">✗ Pen battery</span></td>
+                <td><span class="pmk">⚠ After drivers</span></td>
+                <td>Professional digital artists</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="foot-logo">TrackPad Writer</div>
+    <div style="color:var(--text2);max-width:520px;margin:0 auto 20px;">
+        Built by an engineering student who refused to pay ₹3,000 for something solvable with ₹239 and a weekend of iteration.
+    </div>
+    <div class="foot-links">
+        <a href="#problem">Problem</a>
+        <a href="#journey">Journey</a>
+        <a href="#solution">Solution</a>
+        <a href="#setup">Setup Guide</a>
+        <a href="#apps">Compatible Apps</a>
+        <a href="#compare">Cost Comparison</a>
+    </div>
+    <div>Made with ⚡ AutoHotKey &nbsp;+&nbsp; 🖊️ ₹239 Stylus &nbsp;+&nbsp; 🧠 Engineering Mindset</div>
+</footer>
+
+<script>
+    // ── Copy AHK code ──
+    function copyAHK() {
+        const code = `; ============================================
+; TrackPad Writer — AutoHotKey Script
+; Turns CapsLock into a drawing-mode toggle
+; Compatible with AutoHotKey v1.1
+; ============================================
+;
+; HOW IT WORKS:
+;   Press CapsLock ONCE  -> Holds left click   (Start drawing)
+;   Press CapsLock AGAIN -> Releases left click (Stop drawing)
+;   Press Escape         -> Emergency release at any time
+;
+; USAGE:
+;   1. Open any drawing app (Whiteboard, Paint, OneNote, Excalidraw)
+;   2. Select the pen/draw tool in the app
+;   3. Press CapsLock -> Drawing Mode ON (tooltip appears)
+;   4. Write with your capacitive stylus on the trackpad
+;   5. Press CapsLock again -> Drawing Mode OFF
+; ============================================
+
+#NoEnv
+#SingleInstance Force
+SendMode Input
+SetWorkingDir %A_ScriptDir%
+
+clickHeld := false
+
+CapsLock::
+    if (clickHeld) {
+        Send {LButton up}
+        clickHeld := false
+        ToolTip, Drawing Mode OFF,, , 1
+    } else {
+        Send {LButton down}
+        clickHeld := true
+        ToolTip, Drawing Mode ON,, , 1
+    }
+    SetTimer, RemoveTooltip, -1500
+return
+
+RemoveTooltip:
+    ToolTip,,,,1
+return
+
+Escape::
+    if (clickHeld) {
+        Send {LButton up}
+        clickHeld := false
+        ToolTip, Released,, , 1
+        SetTimer, RemoveTooltip, -1000
+    }
+return`;
+        navigator.clipboard.writeText(code).then(() => {
+            const btn = document.querySelector('.copy-btn');
+            btn.textContent = '✓ Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = 'Copy';
+                btn.classList.remove('copied');
+            }, 2800);
+        });
+    }
+
+    // ── Scroll fade-in ──
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('vis');
+                io.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.07 });
+
+    document.querySelectorAll('.fi').forEach(el => io.observe(el));
+
+    // ── Nav scroll shadow ──
+    window.addEventListener('scroll', () => {
+        document.querySelector('nav').style.boxShadow =
+            window.scrollY > 20 ? '0 4px 32px rgba(0,0,0,0.5)' : 'none';
+    });
+</script>
+
+</body>
+</html>
